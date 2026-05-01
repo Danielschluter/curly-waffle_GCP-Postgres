@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCP Fundamentals</title>
+    <link href="https://fonts.cdnfonts.com/css/open-sans-4" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/dm-sans" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/source-sans-3" rel="stylesheet">
+    <style>
+        /*@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;400;600;800&family=Montserrat:wght@100;400&family=Noto+Sans:wght@100;400&family=Open+Sans:wght@300;400;600;800&display=swap');
+*/
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+        }
+
+        .sidebar {
+            padding: 12px 16px;
+            background: #172A3A;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .sidebar a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .sidebar a.active,
+        .sidebar a:hover {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 0;
+            border-radius: 6px;
+            background: #25445f;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 6px;
+            transition: background 0.15s;
+        }
+
+        button:hover {
+            filter: brightness(0.95);
+            background: #335E84;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        button.green {
+            background: #295f25;
+            transition: background 0.15s;
+        }
+
+        button.green:hover {
+            background: #398433;
+        }
+
+        input {
+            padding: 7px 9px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-right: 8px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 28px;
+            margin: 10px 0 12px;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .loading-indicator.active {
+            display: inline-flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 3px solid #cbd5e1;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: none;
+            color: #b91c1c;
+            font-weight: 600;
+        }
+
+        .error-message.active {
+            display: inline-block;
+        }
+
+        .tbl-container {
+            background: #fff;
+            height: 400px;
+            overflow-y: scroll;
+            overflow-x: auto;
+            border: 1px solid #ccc;
+            position: relative;
+
+            /*
+                This width is updated dynamically by JS.
+                max-width prevents the table container from blowing past the page width.
+            */
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .header-row {
+            position: sticky;
+            top: 0;
+            background: #f1f1f1;
+            z-index: 5;
+            display: flex;
+            border-left: 1px solid #ccc;
+            font-weight: 600;
+            height: 35px;
+            min-width: max-content;
+        }
+
+        .virtual-scroll-content {
+            position: relative;
+            min-width: max-content;
+        }
+
+        .div-row {
+            height: 35px;
+            display: flex;
+            border-left: 1px solid #ccc;
+            background-color: #fff;
+            min-width: max-content;
+        }
+
+        .div-row > div,
+        .header-row > div {
+            background-color: #f8f9fa;
+            color: #433E3F;
+            text-align: right;
+            /*font-family: 'Open Sans', serif;*/
+            font-family: 'DM Sans', 'Open Sans', sans-serif;
+            font-size: 14px;
+            padding: 6px;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            box-sizing: border-box;
+
+            flex: 0 0 auto;
+            width: 140px;
+            min-width: 70px;
+
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .div-row > div:nth-child(-n + 3),
+        .header-row > div:nth-child(-n + 3) {
+            text-align: left;
+        }
+
+        .div-row > div:nth-child(3),
+        .header-row > div:nth-child(3) {
+            width: 280px;
+        }
+
+        .header-cell {
+            position: relative;
+            user-select: none;
+            cursor: pointer;
+            padding-right: 26px !important;
+            background: #82abce !important;
+            color: #f9f9f9 !important;
+        }
+
+        .header-label {
+            display: inline-block;
+            max-width: calc(100% - 18px);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .sort-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .header-cell.sorted .sort-arrow {
+            color: #2563eb;
+            font-weight: 800;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 7px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 10;
+        }
+
+        .resize-handle:hover {
+            background: rgba(37, 99, 235, 0.25);
+        }
+
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            top: 7px;
+            bottom: 7px;
+            right: 2px;
+            width: 1px;
+            background: #cbd5e1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <a href="index.php">Home</a>
+        <a href="pivot.html">Pivoted Data</a>
+        <a href="edgardata.html">Data By Tag</a>
+        <a class="active" href="holdings.html">Portfolio Holdings</a>
+    </div>
+
+    <div class="content">
+<div style="display: none">
+        <p><b>Separate funds by comma:</b></p>
+
+        <label for="fname">Funds:</label>
+        <input type="text" id="fname" name="fname">
+
+        <label for="lname">Weights:</label>
+        <input type="text" id="lname" name="lname">
+</div>
+        <button id="showBtn" onclick="showHint()">Show Holdings</button>
+        <button id="exportBtn" class="green" onclick="exportTableToCSV('fundamental_data.csv')">Export to CSV</button>
+
+        <div class="status-row">
+            <span>Data: <span id="txtHint"></span></span>
+
+            <span id="loadingIndicator" class="loading-indicator">
+                <span class="spinner"></span>
+                Loading data...
+            </span>
+
+            <span id="errorMessage" class="error-message"></span>
+        </div>
+
+        <div class="tbl-container">
+            <div class="header-row" id="dynamicHeader"></div>
+            <div class="virtual-scroll-content"></div>
+        </div>
+
+        <script>
+            function createHeaderColumns(data) {
+                if (!data || data.length === 0) return;
+
+                const headerRow = document.getElementById('dynamicHeader');
+                headerRow.innerHTML = '';
+
+                Object.keys(data[0]).forEach(key => {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'header-cell';
+                    headerDiv.dataset.key = key;
+
+                    const label = document.createElement('span');
+                    label.className = 'header-label';
+                    label.textContent = key;
+
+                    const arrow = document.createElement('span');
+                    arrow.className = 'sort-arrow';
+                    arrow.textContent = '';
+
+                    const resizeHandle = document.createElement('span');
+                    resizeHandle.className = 'resize-handle';
+
+                    headerDiv.appendChild(label);
+                    headerDiv.appendChild(arrow);
+                    headerDiv.appendChild(resizeHandle);
+
+                    headerRow.appendChild(headerDiv);
+                });
+            }
+
+            function setLoadingState(isLoading, message = '') {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const errorMessage = document.getElementById('errorMessage');
+                const showBtn = document.getElementById('showBtn');
+                const exportBtn = document.getElementById('exportBtn');
+
+                if (isLoading) {
+                    loadingIndicator.classList.add('active');
+                    errorMessage.classList.remove('active');
+                    errorMessage.textContent = '';
+                    showBtn.disabled = true;
+                    exportBtn.disabled = true;
+                } else {
+                    loadingIndicator.classList.remove('active');
+                    showBtn.disabled = false;
+                    exportBtn.disabled = false;
+
+                    if (message) {
+                        errorMessage.textContent = message;
+                        errorMessage.classList.add('active');
+                    }
+                }
+            }
+
+            function fetchDataAndPopulate() {
+                const container = document.querySelector('.tbl-container');
+                const content = container.querySelector('.virtual-scroll-content');
+                const headerRow = document.getElementById('dynamicHeader');
+                const txtHint = document.getElementById('txtHint');
+
+                setLoadingState(true);
+
+                content.innerHTML = '';
+                headerRow.innerHTML = '';
+                txtHint.textContent = '';
+                container.scrollTop = 0;
+                container.scrollLeft = 0;
+
+                fetch('src/gcp_fundamentals.php')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Request failed with status ${response.status}`);
+                        }
+
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!Array.isArray(data) || data.length === 0) {
+                            txtHint.textContent = '0 rows';
+                            setLoadingState(false, 'No data returned.');
+                            return;
+                        }
+
+                        createHeaderColumns(data);
+
+                        container.__virtualScroll = new VirtualScroll(container, data);
+
+                        txtHint.textContent = `${data.length.toLocaleString()} rows`;
+
+                        setLoadingState(false);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                        setLoadingState(false, 'Unable to load data. Check the PHP endpoint or browser console.');
+                    });
+            }
+
+            function showHint() {
+                fetchDataAndPopulate();
+            }
+
+            class VirtualScroll {
+                constructor(container, data) {
+                    this.itemHeight = 35;
+                    this.container = container;
+                    this.content = container.querySelector('.virtual-scroll-content');
+
+                    this.originalData = data;
+                    this.data = [...data];
+
+                    this.totalItems = data.length;
+                    this.visibleItems = Math.ceil(container.clientHeight / this.itemHeight);
+
+                    this.cachedRows = new Map();
+
+                    this.sortColumn = null;
+                    this.sortAscending = true;
+
+                    this.columnWidths = [];
+
+                    this.setupColumnWidths();
+                    this.setupScroll();
+                    this.setupSorting();
+                    this.setupResizing();
+                    this.render();
+
+                    container.__virtualScroll = this;
+
+                    container.addEventListener('scroll', () => {
+                        window.requestAnimationFrame(() => this.render());
+                    });
+                }
+
+                setupColumnWidths() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach((header, index) => {
+                        let width = header.offsetWidth || 140;
+
+                        if (index === 2) {
+                            width = 280;
+                        }
+
+                        this.columnWidths[index] = width;
+
+                        header.style.width = `${width}px`;
+                        header.style.flexBasis = `${width}px`;
+                    });
+
+                    this.updateTableWidth();
+                }
+
+                updateTableWidth() {
+                    const totalWidth = this.columnWidths.reduce((sum, width) => sum + width, 0);
+
+                    const headerRow = this.container.querySelector('.header-row');
+
+                    headerRow.style.width = `${totalWidth}px`;
+                    this.content.style.width = `${totalWidth}px`;
+
+                    /*
+                        First method:
+                        The outer table container adjusts to the total column width,
+                        but max-width keeps it inside the content area.
+                    */
+                    this.container.style.width = `${totalWidth}px`;
+                    this.container.style.maxWidth = '100%';
+                }
+
+                getTotalTableWidth() {
+                    return this.columnWidths.reduce((sum, width) => sum + width, 0);
+                }
+
+                applyColumnWidthsToRow(row) {
+                    const cells = row.children;
+
+                    for (let i = 0; i < cells.length; i++) {
+                        const width = this.columnWidths[i] || 140;
+
+                        cells[i].style.width = `${width}px`;
+                        cells[i].style.flexBasis = `${width}px`;
+                    }
+                }
+
+                setupSorting() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach((header, index) => {
+                        header.addEventListener('click', event => {
+                            if (event.target.classList.contains('resize-handle')) return;
+
+                            this.sort(index);
+                        });
+                    });
+                }
+
+                setupResizing() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach((header, index) => {
+                        const handle = header.querySelector('.resize-handle');
+
+                        handle.addEventListener('mousedown', event => {
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            const startX = event.clientX;
+                            const startWidth = header.offsetWidth;
+
+                            document.body.style.cursor = 'col-resize';
+                            document.body.style.userSelect = 'none';
+
+                            const onMouseMove = moveEvent => {
+                                const newWidth = Math.max(70, startWidth + moveEvent.clientX - startX);
+
+                                this.columnWidths[index] = newWidth;
+
+                                header.style.width = `${newWidth}px`;
+                                header.style.flexBasis = `${newWidth}px`;
+
+                                this.updateTableWidth();
+
+                                this.cachedRows.clear();
+                                this.render();
+                            };
+
+                            const onMouseUp = () => {
+                                document.body.style.cursor = '';
+                                document.body.style.userSelect = '';
+
+                                document.removeEventListener('mousemove', onMouseMove);
+                                document.removeEventListener('mouseup', onMouseUp);
+                            };
+
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', onMouseUp);
+                        });
+                    });
+                }
+
+                sort(columnIndex) {
+                    const columnKey = this.getColumnKey(columnIndex);
+
+                    this.sortAscending = this.sortColumn === columnKey ? !this.sortAscending : true;
+                    this.sortColumn = columnKey;
+
+                    this.data.sort((a, b) => this.compareValues(a[columnKey], b[columnKey]));
+
+                    this.cachedRows.clear();
+                    this.updateSortIndicators();
+                    this.render();
+                }
+
+                updateSortIndicators() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach(header => {
+                        const arrow = header.querySelector('.sort-arrow');
+                        const key = header.dataset.key;
+
+                        header.classList.remove('sorted');
+
+                        if (!arrow) return;
+
+                        if (key === this.sortColumn) {
+                            header.classList.add('sorted');
+                            arrow.textContent = this.sortAscending ? '▲' : '▼';
+                        } else {
+                            arrow.textContent = '';
+                        }
+                    });
+                }
+
+                getColumnKey(columnIndex) {
+                    const header = this.container.querySelectorAll('.header-row > div')[columnIndex];
+                    return header.dataset.key;
+                }
+
+                compareValues(valueA, valueB) {
+                    const a = valueA ?? '';
+                    const b = valueB ?? '';
+
+                    const cleanA = String(a).replace(/[$,%]/g, '').replace(/,/g, '').trim();
+                    const cleanB = String(b).replace(/[$,%]/g, '').replace(/,/g, '').trim();
+
+                    const numA = Number(cleanA);
+                    const numB = Number(cleanB);
+
+                    const bothNumeric =
+                        cleanA !== '' &&
+                        cleanB !== '' &&
+                        !isNaN(numA) &&
+                        !isNaN(numB);
+
+                    if (bothNumeric) {
+                        return this.sortAscending ? numA - numB : numB - numA;
+                    }
+
+                    return this.sortAscending
+                        ? String(a).localeCompare(String(b))
+                        : String(b).localeCompare(String(a));
+                }
+
+                createRow(rowData, index) {
+                    if (this.cachedRows.has(index)) {
+                        return this.cachedRows.get(index);
+                    }
+
+                    const row = document.createElement('div');
+                    row.className = 'div-row';
+
+                    /*Object.values(rowData).forEach(cellData => {
+                        const cell = document.createElement('div');
+                        cell.textContent = cellData;
+                        row.appendChild(cell);
+                    });*/
+                    Object.values(rowData).forEach(cellData => {
+    const cell = document.createElement('div');
+    if (typeof cellData === 'number') {
+        if (Number.isInteger(cellData)) {
+            cell.textContent = cellData.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        } else {
+            cell.textContent = cellData.toFixed(2);
+        }
+    } else {
+        cell.textContent = cellData;
+    }
+    row.appendChild(cell);
+});
+
+                    this.applyColumnWidthsToRow(row);
+
+                    this.cachedRows.set(index, row);
+                    return row;
+                }
+
+                setupScroll() {
+                    this.content.style.height = `${this.totalItems * this.itemHeight}px`;
+                }
+
+                render() {
+                    const scrollTop = this.container.scrollTop;
+                    const startIndex = Math.floor(scrollTop / this.itemHeight);
+                    const endIndex = Math.min(startIndex + this.visibleItems + 2, this.totalItems);
+
+                    this.content.innerHTML = '';
+
+                    for (let i = startIndex; i < endIndex; i++) {
+                        if (i >= 0 && i < this.data.length) {
+                            const row = this.createRow(this.data[i], i);
+
+                            row.style.position = 'absolute';
+                            row.style.top = `${(i + 0) * this.itemHeight}px`;
+                            row.style.width = `${this.getTotalTableWidth()}px`;
+
+                            this.content.appendChild(row);
+                        }
+                    }
+                }
+            }
+
+            function exportTableToCSV(filename) {
+                const container = document.querySelector('.tbl-container');
+
+                if (!container.__virtualScroll) {
+                    alert('No table data to export yet.');
+                    return;
+                }
+
+                const headerCells = document.querySelectorAll('.header-row > div');
+                const tableData = container.__virtualScroll.data;
+
+                const csvContent = [
+                    [...headerCells]
+                        .map(cell => `"${escapeCSV(cell.dataset.key || cell.textContent.trim())}"`)
+                        .join(','),
+
+                    ...tableData.map(rowData =>
+                        Object.values(rowData)
+                            .map(value => `"${escapeCSV(value)}"`)
+                            .join(',')
+                    )
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', filename);
+                link.style.display = 'none';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function escapeCSV(value) {
+                if (value === null || value === undefined) return '';
+
+                return String(value).replace(/"/g, '""');
+            }
+        </script>
+    </div>
+</body>
+</html>

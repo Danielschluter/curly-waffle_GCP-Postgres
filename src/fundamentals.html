@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCP Fundamentals</title>
+
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap");
+
+        :root {
+            --bg: #0f1117;
+            --surface: #181c27;
+            --surface2: #1e2335;
+            --border: #2a2f45;
+            --accent: #4f8ef7;
+            --accent2: #34d399;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --danger: #f87171;
+            --warning: #f7b84f;
+            --sidebar-width: 220px;
+            --sidebar-collapsed-width: 72px;
+            --font: "DM Sans", sans-serif;
+            --mono: "DM Mono", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            background: var(--bg);
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            font-size: 14px;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 20px 0 28px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: width 0.18s ease;
+            overflow: hidden;
+        }
+
+        .sidebar-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0 16px 18px 24px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            min-height: 42px;
+        }
+
+        .brand {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.2px;
+            white-space: nowrap;
+            transition: opacity 0.15s ease, width 0.15s ease;
+        }
+
+        .sidebar-toggle {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(79, 142, 247, 0.12);
+            border-color: rgba(79, 142, 247, 0.5);
+            color: var(--accent);
+            opacity: 1;
+        }
+
+        .sidebar-toggle svg {
+            width: 19px;
+            height: 19px;
+            transition: transform 0.18s ease;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: color 0.15s, background 0.15s;
+            white-space: nowrap;
+        }
+
+        .sidebar a.active,
+        .sidebar a:hover {
+            color: var(--accent);
+            background: rgba(79, 142, 247, 0.1);
+            font-weight: 600;
+        }
+
+        .sidebar a svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar a span {
+            transition: opacity 0.12s ease, width 0.12s ease;
+        }
+
+        body.sidebar-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        body.sidebar-collapsed .sidebar-top {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        body.sidebar-collapsed .brand,
+        body.sidebar-collapsed .sidebar a span {
+            opacity: 0;
+            width: 0;
+            pointer-events: none;
+        }
+
+        body.sidebar-collapsed .sidebar a {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        body.sidebar-collapsed .sidebar-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        .content {
+            margin-left: var(--sidebar-width);
+            padding: 36px 40px;
+            min-width: 0;
+            transition: margin-left 0.18s ease;
+        }
+
+        body.sidebar-collapsed .content {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        .page-title {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .page-subtitle {
+            color: var(--muted);
+            font-size: 13.5px;
+            margin-bottom: 18px;
+            max-width: 760px;
+        }
+
+        .control-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 6px 0 14px;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
+        }
+
+        .control-grid {
+            display: flex;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            display: inline-block;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        input {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--surface2);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 12.5px;
+            outline: none;
+            min-width: 220px;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
+        }
+
+        button {
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 7px;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: opacity 0.15s, transform 0.15s, background 0.15s;
+        }
+
+        button:hover {
+            opacity: 0.88;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.green {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        button.green:hover {
+            background: var(--border);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            min-height: 30px;
+            margin: 14px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        #txtHint {
+            color: var(--accent2);
+            font-family: var(--mono);
+            font-weight: 600;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--accent2);
+        }
+
+        .loading-indicator.active {
+            display: inline-flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(100, 116, 139, 0.35);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: none;
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .error-message.active {
+            display: inline-block;
+        }
+
+        .tbl-container {
+            background: var(--surface);
+            height: 620px;
+            overflow-y: scroll;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            margin-top: 18px;
+            border-radius: 12px;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
+        }
+
+        .table-title {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 25;
+            display: block;
+            padding: 22px 28px 16px;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 700;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            min-width: max-content;
+        }
+
+        .header-row {
+            position: sticky;
+            top: 60px;
+            background: var(--surface);
+            z-index: 20;
+            display: flex;
+            border-left: none;
+            font-weight: 700;
+            height: 46px;
+            min-width: max-content;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .virtual-scroll-content {
+            position: relative;
+            min-width: max-content;
+        }
+
+        .div-row {
+            height: 35px;
+            display: flex;
+            border-left: none;
+            background-color: transparent;
+            min-width: max-content;
+        }
+
+        .div-row > div,
+        .header-row > div {
+            color: var(--text);
+            text-align: right;
+            /*font-family: var(--mono);*/
+            font-family: var(--font);
+            align-items: center; /* Vertically centers the text */
+            display: grid; /* Needed for align-items: center' to work */
+            font-size: 12.5px;
+            padding: 9px 12px;
+            border-right: none;
+            border-bottom: 1px solid rgba(42, 47, 69, 0.62);
+            box-sizing: border-box;
+            flex: 0 0 auto;
+            width: 140px;
+            min-width: 70px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            line-height: 22px;
+        }
+
+        .div-row > div {
+            background-color: transparent;
+            font-weight: 600;
+        }
+
+        .div-row:hover > div {
+            background-color: var(--surface2);
+        }
+
+        .div-row > div:nth-child(-n + 3),
+        .header-row > div:nth-child(-n + 3) {
+            text-align: right;
+        }
+
+        .div-row > div:nth-child(1),
+        .div-row > div:nth-child(2) {
+            /*color: var(--accent);*/
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .div-row > div:nth-child(3) {
+            font-family: var(--font);
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .div-row > div:nth-child(3),
+        .header-row > div:nth-child(3) {
+            width: 280px;
+        }
+
+        .header-cell {
+            position: relative;
+            user-select: none;
+            cursor: pointer;
+            padding-right: 28px !important;
+            background: var(--surface) !important;
+            color: var(--muted) !important;
+            font-family: var(--font) !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+        }
+
+        .header-label {
+            display: inline-block;
+            max-width: calc(100% - 18px);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .sort-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: var(--muted);
+            pointer-events: none;
+        }
+
+        .header-cell.sorted .sort-arrow {
+            color: var(--accent);
+            font-weight: 800;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 10;
+        }
+
+        .resize-handle:hover {
+            background: rgba(79, 142, 247, 0.18);
+        }
+
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            right: 2px;
+            width: 1px;
+            background: var(--border);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b425f;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar-top {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .brand,
+            .sidebar a span {
+                opacity: 0;
+                width: 0;
+                pointer-events: none;
+            }
+
+            .sidebar a {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .content,
+            body.sidebar-collapsed .content {
+                margin-left: var(--sidebar-collapsed-width);
+                padding: 24px 12px;
+            }
+
+            .control-grid {
+                align-items: stretch;
+            }
+
+            .field-group,
+            input,
+            button:not(.sidebar-toggle) {
+                width: 100%;
+            }
+
+            .tbl-container {
+                height: 560px;
+                border-radius: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <div class="brand">Portfolio</div>
+            <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Collapse sidebar" aria-expanded="true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16"></path>
+                </svg>
+            </button>
+        </div>
+
+        <a href="index.php">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="pivot.html">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+            </svg>
+            <span>Pivoted Data</span>
+        </a>
+        <a href="edgardata.html">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            <span>Data By Tag</span>
+        </a>
+        <a class="active" href="fundamentals.html">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+            </svg>
+            <span>Fundamentals</span>
+        </a>
+    </div>
+
+    <div class="content">
+        <div class="page-title">GCP Fundamentals</div>
+        <p class="page-subtitle">Load, sort, resize, and export the fundamentals dataset using the same dark Portfolio X-Ray visual system.</p>
+
+        <div class="control-card">
+            <div class="control-grid">
+                <div class="field-group">
+                    <label for="tagsInput">Tags</label>
+                    <input type="text" id="tagsInput" name="tags" placeholder="Example: NetIncomeLoss, Assets, EarningsPerShareDiluted">
+                </div>
+
+
+                <button id="showBtn" onclick="showHint()">Show Holdings</button>
+                <button id="exportBtn" class="green" onclick="exportTableToCSV('fundamental_data.csv')">Export to CSV</button>
+            </div>
+
+            <div class="status-row">
+                <span>Holdings: <span id="txtHint"></span></span>
+
+                <span id="loadingIndicator" class="loading-indicator">
+                    <span class="spinner"></span>
+                    Loading data...
+                </span>
+
+                <span id="errorMessage" class="error-message"></span>
+            </div>
+        </div>
+
+        <div class="tbl-container">
+            <div class="table-title">Fundamental Data</div>
+            <div class="header-row" id="dynamicHeader"></div>
+            <div class="virtual-scroll-content"></div>
+        </div>
+
+        <script>
+            function initSidebarToggle() {
+                const toggle = document.getElementById('sidebarToggle');
+                if (!toggle) return;
+
+                const savedState = localStorage.getItem('fundamentalsSidebarCollapsed');
+                if (savedState === 'true') {
+                    document.body.classList.add('sidebar-collapsed');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+
+                toggle.addEventListener('click', () => {
+                    const collapsed = document.body.classList.toggle('sidebar-collapsed');
+                    toggle.setAttribute('aria-expanded', String(!collapsed));
+                    localStorage.setItem('fundamentalsSidebarCollapsed', String(collapsed));
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', initSidebarToggle);
+
+            function createHeaderColumns(data) {
+                if (!data || data.length === 0) return;
+
+                const headerRow = document.getElementById('dynamicHeader');
+                headerRow.innerHTML = '';
+
+                Object.keys(data[0]).forEach(key => {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'header-cell';
+                    headerDiv.dataset.key = key;
+
+                    const label = document.createElement('span');
+                    label.className = 'header-label';
+                    label.textContent = key;
+
+                    const arrow = document.createElement('span');
+                    arrow.className = 'sort-arrow';
+                    arrow.textContent = '';
+
+                    const resizeHandle = document.createElement('span');
+                    resizeHandle.className = 'resize-handle';
+
+                    headerDiv.appendChild(label);
+                    headerDiv.appendChild(arrow);
+                    headerDiv.appendChild(resizeHandle);
+
+                    headerRow.appendChild(headerDiv);
+                });
+            }
+
+            function setLoadingState(isLoading, message = '') {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const errorMessage = document.getElementById('errorMessage');
+                const showBtn = document.getElementById('showBtn');
+                const exportBtn = document.getElementById('exportBtn');
+
+                if (isLoading) {
+                    loadingIndicator.classList.add('active');
+                    errorMessage.classList.remove('active');
+                    errorMessage.textContent = '';
+                    showBtn.disabled = true;
+                    exportBtn.disabled = true;
+                } else {
+                    loadingIndicator.classList.remove('active');
+                    showBtn.disabled = false;
+                    exportBtn.disabled = false;
+
+                    if (message) {
+                        errorMessage.textContent = message;
+                        errorMessage.classList.add('active');
+                    }
+                }
+            }
+
+            function fetchDataAndPopulate() {
+                const container = document.querySelector('.tbl-container');
+                const content = container.querySelector('.virtual-scroll-content');
+                const headerRow = document.getElementById('dynamicHeader');
+                const txtHint = document.getElementById('txtHint');
+
+                setLoadingState(true);
+
+                content.innerHTML = '';
+                headerRow.innerHTML = '';
+                txtHint.textContent = '';
+                container.scrollTop = 0;
+                container.scrollLeft = 0;
+
+                const tags = document.getElementById('tagsInput')?.value || '';
+                const qs = tags ? `?tags=${encodeURIComponent(tags)}` : '';
+
+                fetch(`fundamentals_api.php${qs}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Request failed with status ${response.status}`);
+                        }
+
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!Array.isArray(data) || data.length === 0) {
+                            txtHint.textContent = '0 rows';
+                            setLoadingState(false, 'No data returned.');
+                            return;
+                        }
+
+                        createHeaderColumns(data);
+
+                        container.__virtualScroll = new VirtualScroll(container, data);
+
+                        txtHint.textContent = `${data.length.toLocaleString()} rows`;
+
+                        setLoadingState(false);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                        setLoadingState(false, 'Unable to load data. Check the PHP endpoint or browser console.');
+                    });
+            }
+
+            function showHint() {
+                fetchDataAndPopulate();
+            }
+
+            class VirtualScroll {
+                constructor(container, data) {
+                    this.itemHeight = 35;
+                    this.container = container;
+                    this.content = container.querySelector('.virtual-scroll-content');
+
+                    this.originalData = data;
+                    this.data = [...data];
+
+                    this.totalItems = data.length;
+                    this.visibleItems = Math.ceil(container.clientHeight / this.itemHeight);
+
+                    this.cachedRows = new Map();
+
+                    this.sortColumn = null;
+                    this.sortAscending = true;
+
+                    this.columnWidths = [];
+
+                    this.setupColumnWidths();
+                    this.setupScroll();
+                    this.setupSorting();
+                    this.setupResizing();
+                    this.render();
+
+                    container.__virtualScroll = this;
+
+                    container.addEventListener('scroll', () => {
+                        window.requestAnimationFrame(() => this.render());
+                    });
+                }
+
+                setupColumnWidths() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach((header, index) => {
+                        let width = header.offsetWidth || 140;
+
+                        if (index === 2) {
+                            width = 280;
+                        }
+
+                        this.columnWidths[index] = width;
+
+                        header.style.width = `${width}px`;
+                        header.style.flexBasis = `${width}px`;
+                    });
+
+                    this.updateTableWidth();
+                }
+
+                updateTableWidth() {
+                    const totalWidth = this.columnWidths.reduce((sum, width) => sum + width, 0);
+
+                    const headerRow = this.container.querySelector('.header-row');
+
+                    headerRow.style.width = `${totalWidth}px`;
+                    this.content.style.width = `${totalWidth}px`;
+
+                    /*
+                        First method:
+                        The outer table container adjusts to the total column width,
+                        but max-width keeps it inside the content area.
+                    */
+                    this.container.style.width = '100%';
+                    this.container.style.maxWidth = '100%';
+                }
+
+                getTotalTableWidth() {
+                    return this.columnWidths.reduce((sum, width) => sum + width, 0);
+                }
+
+                applyColumnWidthsToRow(row) {
+                    const cells = row.children;
+
+                    for (let i = 0; i < cells.length; i++) {
+                        const width = this.columnWidths[i] || 140;
+
+                        cells[i].style.width = `${width}px`;
+                        cells[i].style.flexBasis = `${width}px`;
+                    }
+                }
+
+                setupSorting() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach((header, index) => {
+                        header.addEventListener('click', event => {
+                            if (event.target.classList.contains('resize-handle')) return;
+
+                            this.sort(index);
+                        });
+                    });
+                }
+
+                setupResizing() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach((header, index) => {
+                        const handle = header.querySelector('.resize-handle');
+
+                        handle.addEventListener('mousedown', event => {
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            const startX = event.clientX;
+                            const startWidth = header.offsetWidth;
+
+                            document.body.style.cursor = 'col-resize';
+                            document.body.style.userSelect = 'none';
+
+                            const onMouseMove = moveEvent => {
+                                const newWidth = Math.max(70, startWidth + moveEvent.clientX - startX);
+
+                                this.columnWidths[index] = newWidth;
+
+                                header.style.width = `${newWidth}px`;
+                                header.style.flexBasis = `${newWidth}px`;
+
+                                this.updateTableWidth();
+
+                                this.cachedRows.clear();
+                                this.render();
+                            };
+
+                            const onMouseUp = () => {
+                                document.body.style.cursor = '';
+                                document.body.style.userSelect = '';
+
+                                document.removeEventListener('mousemove', onMouseMove);
+                                document.removeEventListener('mouseup', onMouseUp);
+                            };
+
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', onMouseUp);
+                        });
+                    });
+                }
+
+                sort(columnIndex) {
+                    const columnKey = this.getColumnKey(columnIndex);
+
+                    this.sortAscending = this.sortColumn === columnKey ? !this.sortAscending : true;
+                    this.sortColumn = columnKey;
+
+                    this.data.sort((a, b) => this.compareValues(a[columnKey], b[columnKey]));
+
+                    this.cachedRows.clear();
+                    this.updateSortIndicators();
+                    this.render();
+                }
+
+                updateSortIndicators() {
+                    const headers = this.container.querySelectorAll('.header-row > div');
+
+                    headers.forEach(header => {
+                        const arrow = header.querySelector('.sort-arrow');
+                        const key = header.dataset.key;
+
+                        header.classList.remove('sorted');
+
+                        if (!arrow) return;
+
+                        if (key === this.sortColumn) {
+                            header.classList.add('sorted');
+                            arrow.textContent = this.sortAscending ? '▲' : '▼';
+                        } else {
+                            arrow.textContent = '';
+                        }
+                    });
+                }
+
+                getColumnKey(columnIndex) {
+                    const header = this.container.querySelectorAll('.header-row > div')[columnIndex];
+                    return header.dataset.key;
+                }
+
+                compareValues(valueA, valueB) {
+                    const a = valueA ?? '';
+                    const b = valueB ?? '';
+
+                    const cleanA = String(a).replace(/[$,%]/g, '').replace(/,/g, '').trim();
+                    const cleanB = String(b).replace(/[$,%]/g, '').replace(/,/g, '').trim();
+
+                    const numA = Number(cleanA);
+                    const numB = Number(cleanB);
+
+                    const bothNumeric =
+                        cleanA !== '' &&
+                        cleanB !== '' &&
+                        !isNaN(numA) &&
+                        !isNaN(numB);
+
+                    if (bothNumeric) {
+                        return this.sortAscending ? numA - numB : numB - numA;
+                    }
+
+                    return this.sortAscending
+                        ? String(a).localeCompare(String(b))
+                        : String(b).localeCompare(String(a));
+                }
+
+                createRow(rowData, index) {
+                    if (this.cachedRows.has(index)) {
+                        return this.cachedRows.get(index);
+                    }
+
+                    const row = document.createElement('div');
+                    row.className = 'div-row';
+
+                    /*Object.values(rowData).forEach(cellData => {
+                        const cell = document.createElement('div');
+                        cell.textContent = cellData;
+                        row.appendChild(cell);
+                    });*/
+                    Object.values(rowData).forEach(cellData => {
+    const cell = document.createElement('div');
+    if (typeof cellData === 'number') {
+        if (Number.isInteger(cellData)) {
+            cell.textContent = cellData.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        } else {
+            cell.textContent = cellData.toFixed(2);
+        }
+    } else {
+        cell.textContent = cellData;
+    }
+    row.appendChild(cell);
+});
+
+                    this.applyColumnWidthsToRow(row);
+
+                    this.cachedRows.set(index, row);
+                    return row;
+                }
+
+                setupScroll() {
+                    this.content.style.height = `${this.totalItems * this.itemHeight}px`;
+                }
+
+                render() {
+                    const scrollTop = this.container.scrollTop;
+                    const startIndex = Math.floor(scrollTop / this.itemHeight);
+                    const endIndex = Math.min(startIndex + this.visibleItems + 2, this.totalItems);
+
+                    this.content.innerHTML = '';
+
+                    for (let i = startIndex; i < endIndex; i++) {
+                        if (i >= 0 && i < this.data.length) {
+                            const row = this.createRow(this.data[i], i);
+
+                            row.style.position = 'absolute';
+                            row.style.top = `${(i + 0) * this.itemHeight}px`;
+                            row.style.width = `${this.getTotalTableWidth()}px`;
+
+                            this.content.appendChild(row);
+                        }
+                    }
+                }
+            }
+
+            function exportTableToCSV(filename) {
+                const container = document.querySelector('.tbl-container');
+
+                if (!container.__virtualScroll) {
+                    alert('No table data to export yet.');
+                    return;
+                }
+
+                const headerCells = document.querySelectorAll('.header-row > div');
+                const tableData = container.__virtualScroll.data;
+
+                const csvContent = [
+                    [...headerCells]
+                        .map(cell => `"${escapeCSV(cell.dataset.key || cell.textContent.trim())}"`)
+                        .join(','),
+
+                    ...tableData.map(rowData =>
+                        Object.values(rowData)
+                            .map(value => `"${escapeCSV(value)}"`)
+                            .join(',')
+                    )
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', filename);
+                link.style.display = 'none';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function escapeCSV(value) {
+                if (value === null || value === undefined) return '';
+
+                return String(value).replace(/"/g, '""');
+            }
+        </script>
+    </div>
+</body>
+</html>
